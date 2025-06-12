@@ -6,7 +6,7 @@ This is a starter template for a Fintech application built with Expo and React N
 
 <img src="./assets/images/Fintech Mobile App.png" alt="Fintech Mobile App Preview" width="600" />
 
-This is a preview of the Fintech application interface, showcasing key screens such as the dashboard, transaction view, and authentication flow.
+This is a demo preview of the Fintech application interface.
 
 
 ## Features
