@@ -2,81 +2,70 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFinance } from '@/contexts/FinanceContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Eye, EyeOff, Lock, Settings, Wifi, MoreHorizontal, Pause, Play, Copy, Share, CreditCard as CardIcon } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
+import { Plus, Eye, EyeOff, Lock, Clock as Unlock, Settings, Wifi, MoveHorizontal as MoreHorizontal, Trees as Freeze, CreditCard as CreditCardIcon, Smartphone, Shield, DollarSign, TrendingUp, Calendar } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 48;
 
 export default function CardsScreen() {
   const { colors } = useTheme();
+  const { cards, toggleCardLock, formatCurrency } = useFinance();
+  const router = useRouter();
+  
   const [selectedCard, setSelectedCard] = useState(0);
   const [showCardNumber, setShowCardNumber] = useState(false);
 
-  const cards = [
-    {
-      id: '1',
-      type: 'Primary',
-      number: '4532 1234 5678 9012',
-      holder: 'JOHN DOE',
-      expiry: '12/27',
-      cvv: '123',
-      balance: '$2,459.32',
-      colors: [colors.primary, colors.primaryLight],
-      isLocked: false,
+  const cardActions = [
+    { 
+      icon: Lock, 
+      label: 'Lock Card', 
+      action: 'lock',
+      onPress: () => handleCardAction('lock')
     },
-    {
-      id: '2',
-      type: 'Savings',
-      number: '4532 9876 5432 1098',
-      holder: 'JOHN DOE',
-      expiry: '08/26',
-      cvv: '456',
-      balance: '$8,920.15',
-      colors: [colors.secondary, '#14F195'],
-      isLocked: false,
+    { 
+      icon: Settings, 
+      label: 'Settings', 
+      action: 'settings',
+      onPress: () => router.push('/modals/card-settings')
     },
-    {
-      id: '3',
-      type: 'Business',
-      number: '4532 5555 4444 3333',
-      holder: 'JOHN DOE',
-      expiry: '03/28',
-      cvv: '789',
-      balance: '$1,079.85',
-      colors: [colors.accent, '#FBBF24'],
-      isLocked: true,
+    { 
+      icon: Plus, 
+      label: 'Add Money', 
+      action: 'add',
+      onPress: () => router.push('/modals/add-money')
+    },
+    { 
+      icon: MoreHorizontal, 
+      label: 'More', 
+      action: 'more',
+      onPress: () => router.push('/modals/card-menu')
     },
   ];
 
-  const handleCardAction = (action: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    switch (action) {
-      case 'lock':
-        Alert.alert('Lock Card', 'Are you sure you want to lock this card?', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Lock', style: 'destructive', onPress: () => Alert.alert('Success', 'Card has been locked') }
-        ]);
-        break;
-      case 'settings':
-        Alert.alert('Card Settings', 'Card settings functionality coming soon!');
-        break;
-      case 'add':
-        Alert.alert('Add Money', 'Add money to card functionality coming soon!');
-        break;
-      case 'more':
-        Alert.alert('More Options', 'Additional card options coming soon!');
-        break;
+  const cardFeatures = [
+    {
+      icon: Shield,
+      title: 'Secure Payments',
+      description: 'Advanced encryption & fraud protection'
+    },
+    {
+      icon: Smartphone,
+      title: 'Contactless Pay',
+      description: 'Tap to pay with your phone or card'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Cashback Rewards',
+      description: 'Earn up to 3% on all purchases'
+    },
+    {
+      icon: Calendar,
+      title: 'Spending Insights',
+      description: 'Track and categorize your expenses'
     }
-  };
-
-  const cardActions = [
-    { icon: Lock, label: 'Lock Card', action: 'lock' },
-    { icon: Settings, label: 'Settings', action: 'settings' },
-    { icon: Plus, label: 'Add Money', action: 'add' },
-    { icon: MoreHorizontal, label: 'More', action: 'more' },
   ];
 
   const transactions = [
@@ -84,33 +73,74 @@ export default function CardsScreen() {
       id: '1',
       merchant: 'Apple Store',
       category: 'Shopping',
-      amount: '-$299.00',
+      amount: -299.00,
       date: 'Today, 3:45 PM',
       status: 'completed',
+      icon: '🛍️',
+      location: 'Fifth Avenue, NYC'
     },
     {
       id: '2',
       merchant: 'Uber',
       category: 'Transportation',
-      amount: '-$12.50',
+      amount: -12.50,
       date: 'Today, 1:20 PM',
       status: 'completed',
+      icon: '🚗',
+      location: 'Manhattan'
     },
     {
       id: '3',
       merchant: 'Starbucks',
       category: 'Food & Drink',
-      amount: '-$5.75',
+      amount: -5.75,
       date: 'Yesterday, 8:30 AM',
       status: 'pending',
+      icon: '☕',
+      location: 'Times Square'
     },
+    {
+      id: '4',
+      merchant: 'Amazon',
+      category: 'Shopping',
+      amount: -67.99,
+      date: 'Dec 13, 2:15 PM',
+      status: 'completed',
+      icon: '📦',
+      location: 'Online'
+    }
   ];
+
+  const handleCardAction = (action: string) => {
+    const currentCard = cards[selectedCard];
+    
+    switch (action) {
+      case 'lock':
+        toggleCardLock(currentCard.id);
+        Alert.alert(
+          currentCard.isLocked ? 'Card Unlocked' : 'Card Locked',
+          currentCard.isLocked 
+            ? 'Your card has been unlocked and can be used for transactions.'
+            : 'Your card has been locked and cannot be used for transactions.'
+        );
+        break;
+      default:
+        break;
+    }
+  };
+
+  const getCardUtilization = (card: any) => {
+    return (card.spent / card.limit) * 100;
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>My Cards</Text>
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.surface }]}>
+        <TouchableOpacity 
+          style={[styles.addButton, { backgroundColor: colors.surface }]}
+          onPress={() => router.push('/modals/add-card')}
+        >
           <Plus size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
@@ -128,47 +158,73 @@ export default function CardsScreen() {
           }}
         >
           {cards.map((card, index) => (
-            <LinearGradient
+            <TouchableOpacity
               key={card.id}
-              colors={card.colors}
-              style={[styles.card, { width: CARD_WIDTH }]}
+              onPress={() => router.push(`/modals/card-details?id=${card.id}`)}
             >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardType}>{card.type}</Text>
-                <View style={styles.cardIcons}>
-                  <Wifi size={20} color="#FFFFFF" style={{ opacity: 0.8 }} />
-                  {card.isLocked && <Lock size={16} color="#FFFFFF" />}
+              <LinearGradient
+                colors={card.colors}
+                style={[styles.card, { width: CARD_WIDTH }]}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardTypeContainer}>
+                    <Text style={styles.cardType}>{card.type}</Text>
+                    {card.isVirtual && (
+                      <View style={styles.virtualBadge}>
+                        <Text style={styles.virtualBadgeText}>Virtual</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.cardIcons}>
+                    <Wifi size={20} color="#FFFFFF" style={{ opacity: 0.8 }} />
+                    {card.isLocked && <Lock size={16} color="#FFFFFF" />}
+                  </View>
                 </View>
-              </View>
-              
-              <View style={styles.cardNumber}>
-                <Text style={styles.cardNumberText}>
-                  {showCardNumber ? card.number : '•••• •••• •••• ' + card.number.slice(-4)}
-                </Text>
-                <TouchableOpacity onPress={() => setShowCardNumber(!showCardNumber)}>
-                  {showCardNumber ? (
-                    <EyeOff size={20} color="#FFFFFF" />
-                  ) : (
-                    <Eye size={20} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
-              </View>
+                
+                <View style={styles.cardNumber}>
+                  <Text style={styles.cardNumberText}>
+                    {showCardNumber ? card.number : '•••• •••• •••• ' + card.number.slice(-4)}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowCardNumber(!showCardNumber)}>
+                    {showCardNumber ? (
+                      <EyeOff size={20} color="#FFFFFF" />
+                    ) : (
+                      <Eye size={20} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                </View>
 
-              <View style={styles.cardFooter}>
-                <View>
-                  <Text style={styles.cardLabel}>Card Holder</Text>
-                  <Text style={styles.cardHolder}>{card.holder}</Text>
+                <View style={styles.cardFooter}>
+                  <View>
+                    <Text style={styles.cardLabel}>Card Holder</Text>
+                    <Text style={styles.cardHolder}>{card.holder}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.cardLabel}>Expires</Text>
+                    <Text style={styles.cardExpiry}>{card.expiry}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.cardLabel}>Balance</Text>
+                    <Text style={styles.cardBalance}>{card.balance}</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.cardLabel}>Expires</Text>
-                  <Text style={styles.cardExpiry}>{card.expiry}</Text>
+
+                {/* Card Utilization */}
+                <View style={styles.cardUtilization}>
+                  <View style={styles.utilizationBar}>
+                    <View 
+                      style={[
+                        styles.utilizationFill,
+                        { width: `${getCardUtilization(card)}%` }
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.utilizationText}>
+                    {formatCurrency(card.spent)} / {formatCurrency(card.limit)}
+                  </Text>
                 </View>
-                <View>
-                  <Text style={styles.cardLabel}>Balance</Text>
-                  <Text style={styles.cardBalance}>{card.balance}</Text>
-                </View>
-              </View>
-            </LinearGradient>
+              </LinearGradient>
+            </TouchableOpacity>
           ))}
         </ScrollView>
 
@@ -188,6 +244,35 @@ export default function CardsScreen() {
           ))}
         </View>
 
+        {/* Card Status */}
+        <View style={styles.section}>
+          <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
+            <View style={styles.statusHeader}>
+              <View style={styles.statusInfo}>
+                <Text style={[styles.statusTitle, { color: colors.text }]}>
+                  {cards[selectedCard]?.type} Card
+                </Text>
+                <Text style={[
+                  styles.statusText,
+                  { color: cards[selectedCard]?.isLocked ? colors.error : colors.secondary }
+                ]}>
+                  {cards[selectedCard]?.isLocked ? 'Locked' : 'Active'}
+                </Text>
+              </View>
+              <View style={[
+                styles.statusIndicator,
+                { backgroundColor: cards[selectedCard]?.isLocked ? colors.error : colors.secondary }
+              ]} />
+            </View>
+            <Text style={[styles.statusDescription, { color: colors.textSecondary }]}>
+              {cards[selectedCard]?.isLocked 
+                ? 'This card is currently locked and cannot be used for transactions.'
+                : 'This card is active and ready for use.'
+              }
+            </Text>
+          </View>
+        </View>
+
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
@@ -196,7 +281,7 @@ export default function CardsScreen() {
               <TouchableOpacity
                 key={index}
                 style={[styles.actionItem, { backgroundColor: colors.surface }]}
-                onPress={() => handleCardAction(action.action)}
+                onPress={action.onPress}
               >
                 <View style={[styles.actionIcon, { backgroundColor: `${colors.primary}10` }]}>
                   <action.icon size={20} color={colors.primary} />
@@ -209,13 +294,38 @@ export default function CardsScreen() {
           </View>
         </View>
 
+        {/* Card Features */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Card Features</Text>
+          <View style={styles.features}>
+            {cardFeatures.map((feature, index) => (
+              <View
+                key={index}
+                style={[styles.featureItem, { backgroundColor: colors.surface }]}
+              >
+                <View style={[styles.featureIcon, { backgroundColor: `${colors.primary}10` }]}>
+                  <feature.icon size={20} color={colors.primary} />
+                </View>
+                <View style={styles.featureContent}>
+                  <Text style={[styles.featureTitle, { color: colors.text }]}>
+                    {feature.title}
+                  </Text>
+                  <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
+                    {feature.description}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
         {/* Recent Transactions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Recent Transactions
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/modals/transaction-history')}>
               <Text style={[styles.seeAllButton, { color: colors.primary }]}>
                 See All
               </Text>
@@ -224,21 +334,28 @@ export default function CardsScreen() {
           
           <View style={styles.transactions}>
             {transactions.map((transaction) => (
-              <View
+              <TouchableOpacity
                 key={transaction.id}
                 style={[styles.transactionItem, { backgroundColor: colors.surface }]}
+                onPress={() => router.push(`/modals/transaction-details?id=${transaction.id}`)}
               >
+                <View style={styles.transactionIcon}>
+                  <Text style={styles.transactionEmoji}>{transaction.icon}</Text>
+                </View>
                 <View style={styles.transactionDetails}>
                   <Text style={[styles.transactionMerchant, { color: colors.text }]}>
                     {transaction.merchant}
                   </Text>
                   <Text style={[styles.transactionCategory, { color: colors.textSecondary }]}>
-                    {transaction.category} • {transaction.date}
+                    {transaction.category} • {transaction.location}
+                  </Text>
+                  <Text style={[styles.transactionDate, { color: colors.textMuted }]}>
+                    {transaction.date}
                   </Text>
                 </View>
                 <View style={styles.transactionAmount}>
                   <Text style={[styles.transactionAmountText, { color: colors.text }]}>
-                    {transaction.amount}
+                    {formatCurrency(Math.abs(transaction.amount))}
                   </Text>
                   <View style={[
                     styles.transactionStatus,
@@ -255,7 +372,7 @@ export default function CardsScreen() {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -291,7 +408,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   card: {
-    height: 200,
+    height: 220,
     borderRadius: 20,
     padding: 24,
     justifyContent: 'space-between',
@@ -299,13 +416,29 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardTypeContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   cardType: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
     opacity: 0.9,
+  },
+  virtualBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  virtualBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
   },
   cardIcons: {
     flexDirection: 'row',
@@ -350,6 +483,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
   },
+  cardUtilization: {
+    marginTop: 12,
+    gap: 4,
+  },
+  utilizationBar: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  utilizationFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  utilizationText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#FFFFFF',
+    opacity: 0.8,
+  },
   indicators: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -374,10 +528,43 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
+    marginBottom: 16,
   },
   seeAllButton: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
+  },
+  statusCard: {
+    padding: 16,
+    borderRadius: 16,
+    gap: 8,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusInfo: {
+    flex: 1,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 2,
+  },
+  statusText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+  },
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  statusDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
   },
   actions: {
     flexDirection: 'row',
@@ -402,6 +589,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     textAlign: 'center',
   },
+  features: {
+    gap: 12,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    gap: 16,
+  },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureContent: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 2,
+  },
+  featureDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+  },
   transactions: {
     gap: 12,
   },
@@ -410,7 +627,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 16,
-    justifyContent: 'space-between',
+    gap: 12,
+  },
+  transactionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+  },
+  transactionEmoji: {
+    fontSize: 20,
   },
   transactionDetails: {
     flex: 1,
@@ -422,6 +650,11 @@ const styles = StyleSheet.create({
   },
   transactionCategory: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 2,
+  },
+  transactionDate: {
+    fontSize: 12,
     fontFamily: 'Inter-Regular',
   },
   transactionAmount: {

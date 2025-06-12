@@ -1,9 +1,26 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Chrome as Home, CreditCard, Send, TrendingUp, User } from 'lucide-react-native';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { Chrome as Home, CreditCard, Send, TrendingUp, User, Bell } from 'lucide-react-native';
+import { View, Text, StyleSheet } from 'react-native';
+
+function TabBarBadge({ count }: { count: number }) {
+  const { colors } = useTheme();
+  
+  if (count === 0) return null;
+  
+  return (
+    <View style={[styles.badge, { backgroundColor: colors.error }]}>
+      <Text style={styles.badgeText}>
+        {count > 99 ? '99+' : count.toString()}
+      </Text>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { unreadCount } = useNotifications();
 
   return (
     <Tabs
@@ -16,6 +33,11 @@ export default function TabLayout() {
           height: 84,
           paddingBottom: 20,
           paddingTop: 8,
+          elevation: 8,
+          shadowColor: colors.black,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
@@ -67,10 +89,32 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ size, color }) => (
-            <User size={size} color={color} />
+            <View>
+              <User size={size} color={color} />
+              <TabBarBadge count={unreadCount} />
+            </View>
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+  },
+});

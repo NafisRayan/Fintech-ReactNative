@@ -1,101 +1,115 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFinance } from '@/contexts/FinanceContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  Bell, 
-  Eye, 
-  EyeOff, 
-  Plus, 
-  Send, 
-  Smartphone, 
-  CreditCard,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownLeft,
-  QrCode,
-  Receipt,
-  DollarSign,
-  BarChart3,
-  Zap
-} from 'lucide-react-native';
-import SendMoneyModal from '@/components/modals/SendMoneyModal';
-import * as Haptics from 'expo-haptics';
+import { Bell, Eye, EyeOff, Plus, Send, Smartphone, CreditCard, TrendingUp, ArrowUpRight, ArrowDownLeft, Target, ChartPie as PieChart, Zap, Gift, QrCode, Users } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
+const CARD_WIDTH = width - 48;
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { 
+    totalBalance, 
+    getRecentTransactions, 
+    formatCurrency, 
+    calculateSpendingTrend,
+    budgets,
+    goals,
+    portfolioValue,
+    portfolioChangePercent
+  } = useFinance();
+  const { unreadCount } = useNotifications();
+  const router = useRouter();
+  
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [sendMoneyModalVisible, setSendMoneyModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleQuickAction = (action: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    switch (action) {
-      case 'Send':
-        setSendMoneyModalVisible(true);
-        break;
-      case 'Request':
-        Alert.alert('Request Money', 'Request money feature coming soon!');
-        break;
-      case 'Pay':
-        Alert.alert('QR Pay', 'QR payment feature coming soon!');
-        break;
-      case 'Cards':
-        Alert.alert('Cards', 'Navigate to cards section');
-        break;
-    }
-  };
+  const recentTransactions = getRecentTransactions(4);
+  const spendingTrend = calculateSpendingTrend();
 
   const quickActions = [
-    { icon: Send, label: 'Send', color: colors.primary, action: 'Send' },
-    { icon: Plus, label: 'Request', color: colors.secondary, action: 'Request' },
-    { icon: QrCode, label: 'QR Pay', color: colors.accent, action: 'Pay' },
-    { icon: CreditCard, label: 'Cards', color: colors.primary, action: 'Cards' },
+    { 
+      icon: Send, 
+      label: 'Send', 
+      color: colors.primary,
+      onPress: () => router.push('/modals/send-money')
+    },
+    { 
+      icon: QrCode, 
+      label: 'QR Pay', 
+      color: colors.secondary,
+      onPress: () => router.push('/modals/qr-scanner')
+    },
+    { 
+      icon: Users, 
+      label: 'Split', 
+      color: colors.accent,
+      onPress: () => router.push('/modals/split-bill')
+    },
+    { 
+      icon: Plus, 
+      label: 'Request', 
+      color: colors.primary,
+      onPress: () => router.push('/modals/request-money')
+    },
   ];
 
-  const recentTransactions = [
+  const insights = [
     {
-      id: '1',
-      title: 'Coffee Shop',
-      subtitle: 'Today, 9:30 AM',
-      amount: '-$4.50',
-      type: 'expense',
-      icon: '☕',
+      title: 'Monthly Savings',
+      value: formatCurrency(1250),
+      change: '+12%',
+      positive: true,
+      icon: Target,
+      color: colors.secondary
     },
     {
-      id: '2',
-      title: 'Salary Deposit',
-      subtitle: 'Yesterday, 2:00 PM',
-      amount: '+$3,200.00',
-      type: 'income',
-      icon: '💰',
+      title: 'Portfolio',
+      value: formatCurrency(portfolioValue),
+      change: `${portfolioChangePercent > 0 ? '+' : ''}${portfolioChangePercent.toFixed(1)}%`,
+      positive: portfolioChangePercent > 0,
+      icon: TrendingUp,
+      color: colors.primary
     },
     {
-      id: '3',
-      title: 'Netflix',
-      subtitle: 'Dec 15, 6:45 PM',
-      amount: '-$15.99',
-      type: 'expense',
-      icon: '🎬',
-    },
-    {
-      id: '4',
-      title: 'Transfer from John',
-      subtitle: 'Dec 14, 11:20 AM',
-      amount: '+$125.00',
-      type: 'income',
-      icon: '👤',
-    },
+      title: 'Spending',
+      value: formatCurrency(2340),
+      change: `${spendingTrend > 0 ? '+' : ''}${spendingTrend.toFixed(1)}%`,
+      positive: spendingTrend < 0,
+      icon: PieChart,
+      color: colors.accent
+    }
   ];
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.userInfo}>
@@ -105,15 +119,25 @@ export default function HomeScreen() {
             />
             <View>
               <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-                Good morning
+                {getGreeting()}
               </Text>
               <Text style={[styles.userName, { color: colors.text }]}>
                 {user?.name}
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: colors.surface }]}>
+          <TouchableOpacity 
+            style={[styles.notificationButton, { backgroundColor: colors.surface }]}
+            onPress={() => router.push('/modals/notifications')}
+          >
             <Bell size={20} color={colors.text} />
+            {unreadCount > 0 && (
+              <View style={[styles.notificationBadge, { backgroundColor: colors.error }]}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -133,13 +157,17 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <Text style={styles.balanceAmount}>
-            {balanceVisible ? '$12,459.32' : '••••••'}
+            {balanceVisible ? formatCurrency(totalBalance) : '••••••'}
           </Text>
           <View style={styles.balanceFooter}>
             <View style={styles.balanceChange}>
               <TrendingUp size={16} color="#FFFFFF" />
               <Text style={styles.balanceChangeText}>+2.5% from last month</Text>
             </View>
+            <TouchableOpacity style={styles.addMoneyButton}>
+              <Plus size={16} color="#FFFFFF" />
+              <Text style={styles.addMoneyText}>Add Money</Text>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -153,7 +181,7 @@ export default function HomeScreen() {
               <TouchableOpacity 
                 key={index} 
                 style={styles.quickAction}
-                onPress={() => handleQuickAction(action.action)}
+                onPress={action.onPress}
               >
                 <View style={[styles.quickActionIcon, { backgroundColor: `${action.color}10` }]}>
                   <action.icon size={24} color={action.color} />
@@ -166,13 +194,92 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Financial Insights */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Financial Insights
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.insights}>
+              {insights.map((insight, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.insightCard, { backgroundColor: colors.surface }]}
+                >
+                  <View style={[styles.insightIcon, { backgroundColor: `${insight.color}10` }]}>
+                    <insight.icon size={20} color={insight.color} />
+                  </View>
+                  <Text style={[styles.insightTitle, { color: colors.textSecondary }]}>
+                    {insight.title}
+                  </Text>
+                  <Text style={[styles.insightValue, { color: colors.text }]}>
+                    {insight.value}
+                  </Text>
+                  <Text style={[
+                    styles.insightChange,
+                    { color: insight.positive ? colors.secondary : colors.error }
+                  ]}>
+                    {insight.change}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Budget Overview */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Budget Overview
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/modals/budget-details')}>
+              <Text style={[styles.seeAllButton, { color: colors.primary }]}>
+                See All
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.budgetCards}>
+            {budgets.slice(0, 2).map((budget) => (
+              <TouchableOpacity
+                key={budget.id}
+                style={[styles.budgetCard, { backgroundColor: colors.surface }]}
+              >
+                <View style={styles.budgetHeader}>
+                  <Text style={styles.budgetIcon}>{budget.icon}</Text>
+                  <Text style={[styles.budgetCategory, { color: colors.text }]}>
+                    {budget.category}
+                  </Text>
+                </View>
+                <View style={styles.budgetProgress}>
+                  <View style={[styles.budgetProgressBar, { backgroundColor: colors.border }]}>
+                    <View 
+                      style={[
+                        styles.budgetProgressFill,
+                        { 
+                          backgroundColor: budget.color,
+                          width: `${(budget.spent / budget.allocated) * 100}%`
+                        }
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.budgetText, { color: colors.textSecondary }]}>
+                    {formatCurrency(budget.spent)} of {formatCurrency(budget.allocated)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Recent Transactions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Recent Transactions
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/modals/transaction-history')}>
               <Text style={[styles.seeAllButton, { color: colors.primary }]}>
                 See All
               </Text>
@@ -184,6 +291,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={transaction.id}
                 style={[styles.transactionItem, { backgroundColor: colors.surface }]}
+                onPress={() => router.push(`/modals/transaction-details?id=${transaction.id}`)}
               >
                 <View style={styles.transactionIcon}>
                   <Text style={styles.transactionEmoji}>{transaction.icon}</Text>
@@ -201,7 +309,7 @@ export default function HomeScreen() {
                     styles.transactionAmountText,
                     { color: transaction.type === 'income' ? colors.secondary : colors.text }
                   ]}>
-                    {transaction.amount}
+                    {transaction.type === 'income' ? '+' : ''}{formatCurrency(Math.abs(transaction.amount))}
                   </Text>
                   {transaction.type === 'income' ? (
                     <ArrowDownLeft size={16} color={colors.secondary} />
@@ -213,13 +321,56 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
+
+        {/* Goals Progress */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Savings Goals
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/modals/goals')}>
+              <Text style={[styles.seeAllButton, { color: colors.primary }]}>
+                Manage
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.goals}>
+              {goals.map((goal) => (
+                <TouchableOpacity
+                  key={goal.id}
+                  style={[styles.goalCard, { backgroundColor: colors.surface }]}
+                >
+                  <Text style={styles.goalIcon}>{goal.icon}</Text>
+                  <Text style={[styles.goalTitle, { color: colors.text }]}>
+                    {goal.title}
+                  </Text>
+                  <View style={styles.goalProgress}>
+                    <View style={[styles.goalProgressBar, { backgroundColor: colors.border }]}>
+                      <View 
+                        style={[
+                          styles.goalProgressFill,
+                          { 
+                            backgroundColor: goal.color,
+                            width: `${(goal.current / goal.target) * 100}%`
+                          }
+                        ]}
+                      />
+                    </View>
+                    <Text style={[styles.goalProgressText, { color: colors.textSecondary }]}>
+                      {formatCurrency(goal.current)} / {formatCurrency(goal.target)}
+                    </Text>
+                  </View>
+                  <Text style={[styles.goalPercentage, { color: goal.color }]}>
+                    {Math.round((goal.current / goal.target) * 100)}% complete
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
       </ScrollView>
-      
-      {/* Send Money Modal */}
-      <SendMoneyModal
-        visible={sendMoneyModalVisible}
-        onClose={() => setSendMoneyModalVisible(false)}
-      />
     </SafeAreaView>
   );
 }
@@ -259,6 +410,23 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
   },
   balanceCard: {
     margin: 24,
@@ -300,6 +468,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
   },
+  addMoneyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  addMoneyText: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
   section: {
     paddingHorizontal: 24,
     marginBottom: 24,
@@ -338,6 +520,74 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
+  },
+  insights: {
+    flexDirection: 'row',
+    gap: 16,
+    paddingRight: 24,
+  },
+  insightCard: {
+    width: 140,
+    padding: 16,
+    borderRadius: 16,
+    gap: 8,
+  },
+  insightIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  insightTitle: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+  },
+  insightValue: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  insightChange: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+  },
+  budgetCards: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  budgetCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    gap: 12,
+  },
+  budgetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  budgetIcon: {
+    fontSize: 16,
+  },
+  budgetCategory: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  budgetProgress: {
+    gap: 8,
+  },
+  budgetProgressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  budgetProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  budgetText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
   },
   transactions: {
     gap: 12,
@@ -378,6 +628,44 @@ const styles = StyleSheet.create({
   },
   transactionAmountText: {
     fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  goals: {
+    flexDirection: 'row',
+    gap: 16,
+    paddingRight: 24,
+  },
+  goalCard: {
+    width: 160,
+    padding: 16,
+    borderRadius: 16,
+    gap: 12,
+  },
+  goalIcon: {
+    fontSize: 24,
+  },
+  goalTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  goalProgress: {
+    gap: 8,
+  },
+  goalProgressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  goalProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  goalProgressText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+  },
+  goalPercentage: {
+    fontSize: 12,
     fontFamily: 'Inter-SemiBold',
   },
 });
