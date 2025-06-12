@@ -1,36 +1,44 @@
-import { create } from 'zustand';
-import { zustandStorage } from '@/store/mmkv-storage';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { zustandStorage } from "./mmkv-storage";
 
 export interface Transaction {
-  id: string;
-  title: string;
-  amount: number;
-  date: Date;
+	id: string;
+	amount: number;
+	date: Date;
+	title: string;
 }
 
 export interface BalanceState {
-  transactions: Array<Transaction>;
-  runTransaction: (transaction: Transaction) => void;
-  balance: () => number;
-  clearTransactions: () => void;
+	transactions: Transaction[];
+	runTransaction: (transaction: Transaction) => void;
+	balance: () => number;
+	clearTransactions: () => void;
 }
 
 export const useBalanceStore = create<BalanceState>()(
-  persist(
-    (set, get) => ({
-      transactions: [],
-      runTransaction: (transaction: Transaction) => {
-        set((state) => ({ transactions: [...state.transactions, transaction] }));
-      },
-      balance: () => get().transactions.reduce((acc, transaction) => acc + transaction.amount, 0),
-      clearTransactions: () => {
-        set({ transactions: [] });
-      },
-    }),
-    {
-      name: 'balance',
-      storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+	persist(
+		(set, get) => ({
+			transactions: [],
+			runTransaction: (transaction: Transaction) => {
+				set({
+					transactions: [transaction, ...get().transactions],
+				});
+			},
+			balance: () => {
+				const total = get().transactions.reduce(
+					(acc, t) => acc + t.amount,
+					0
+				);
+				return total;
+			},
+			clearTransactions: () => {
+				set({ transactions: [] });
+			},
+		}),
+		{
+			name: "balance",
+			storage: createJSONStorage(() => zustandStorage),
+		}
+	)
 );

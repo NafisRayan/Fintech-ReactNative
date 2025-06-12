@@ -1,104 +1,141 @@
-import Colors from '@/constants/Colors';
-import { defaultStyles } from '@/constants/Styles';
-import { useSignUp } from '@clerk/clerk-expo';
-import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+	KeyboardAvoidingView,
+	Platform,
+	StyleSheet,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View,
+	Alert,
+} from "react-native";
+import React, { useState } from "react";
+import { defaultStyles } from "@/constants/Styles";
+import Colors from "@/constants/Colors";
+import { Link } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
+import { FIRE_BASE_AUTH } from "@/firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const Page = () => {
-  const [countryCode, setCountryCode] = useState('+49');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
-  const router = useRouter();
-  const { signUp } = useSignUp();
+	const [email, setEmail] = useState<string>("");
+	const [password, setPassword] = useState<string>("");
+	const auth = FIRE_BASE_AUTH;
 
-  const onSignup = async () => {
-    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
+	const keyboardOffset = Platform.OS === "ios" ? 90 : 0;
 
-    try {
-      await signUp!.create({
-        phoneNumber: fullPhoneNumber,
-      });
-      signUp!.preparePhoneNumberVerification();
+	const router = useRouter();
 
-      router.push({ pathname: '/verify/[phone]', params: { phone: fullPhoneNumber } });
-    } catch (error) {
-      console.error('Error signing up:', error);
-    }
-  };
+	const onUserSignUp = async () => {
+		try {
+			const response = await createUserWithEmailAndPassword(
+				auth,
+				email,
+				password
+			);
 
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior="padding"
-      keyboardVerticalOffset={keyboardVerticalOffset}>
-      <View style={defaultStyles.container}>
-        <Text style={defaultStyles.header}>Let's get started!</Text>
-        <Text style={defaultStyles.descriptionText}>
-          Enter your phone number. We will send you a confirmation code there
-        </Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Country code"
-            placeholderTextColor={Colors.gray}
-            value={countryCode}
-          />
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Mobile number"
-            placeholderTextColor={Colors.gray}
-            keyboardType="numeric"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-          />
-        </View>
+			console.log(response.user);
 
-        <Link href={'/login'} replace asChild>
-          <TouchableOpacity>
-            <Text style={defaultStyles.textLink}>Already have an account? Log in</Text>
-          </TouchableOpacity>
-        </Link>
+			const jsonValue = JSON.stringify(response.user);
+			await AsyncStorage.setItem("my-key", jsonValue);
 
-        <View style={{ flex: 1 }} />
-
-        <TouchableOpacity
-          style={[
-            defaultStyles.pillButton,
-            phoneNumber !== '' ? styles.enabled : styles.disabled,
-            { marginBottom: 20 },
-          ]}
-          onPress={onSignup}>
-          <Text style={defaultStyles.buttonText}>Sign up</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
-  );
+			router.push(`/(authenticated)/(tabs)/home`);
+			setEmail("");
+			setPassword("");
+		} catch (error) {
+			console.log(error);
+		}
+	};
+	return (
+		<KeyboardAvoidingView
+			style={{ flex: 1 }}
+			behavior="padding"
+			keyboardVerticalOffset={keyboardOffset}
+		>
+			<StatusBar style="dark" />
+			<View
+				style={[
+					defaultStyles.container,
+					{ backgroundColor: Colors.background },
+				]}
+			>
+				<Text style={defaultStyles.header}>Let's get started!</Text>
+				<Text style={defaultStyles.descriptionText}>
+					Enter your email and password to create an account with us.
+				</Text>
+				<View style={styles.inputContainer}>
+					<Text style={styles.label}>Email</Text>
+					<TextInput
+						style={[styles.input, {}]}
+						defaultValue=""
+						keyboardType="email-address"
+						placeholder="user@gmail.com"
+						value={email}
+						onChangeText={setEmail}
+						placeholderTextColor={Colors.gray}
+					/>
+				</View>
+				<View style={styles.inputContainer}>
+					<Text style={styles.label}>Password</Text>
+					<TextInput
+						style={[styles.input, {}]}
+						defaultValue=""
+						keyboardType="default"
+						placeholder="******"
+						value={password}
+						onChangeText={setPassword}
+						placeholderTextColor={Colors.gray}
+						secureTextEntry={true}
+					/>
+				</View>
+				<Link
+					href={"/login"}
+					asChild
+					style={[defaultStyles.textLink, { marginTop: 20 }]}
+				>
+					<Text>Already have an account? Log in</Text>
+				</Link>
+				<View style={{ flex: 1 }}></View>
+				<View style={{ marginBottom: 50 }}>
+					<TouchableOpacity
+						onPress={onUserSignUp}
+						style={[
+							defaultStyles.pillButton,
+							{
+								backgroundColor:
+									email === "" ? Colors.primaryMuted : Colors.primary,
+							},
+						]}
+					>
+						<Text style={defaultStyles.buttonText}>Sign up</Text>
+					</TouchableOpacity>
+				</View>
+			</View>
+		</KeyboardAvoidingView>
+	);
 };
-const styles = StyleSheet.create({
-  inputContainer: {
-    marginVertical: 40,
-    flexDirection: 'row',
-  },
-  input: {
-    backgroundColor: Colors.lightGray,
-    padding: 20,
-    borderRadius: 16,
-    fontSize: 20,
-    marginRight: 10,
-  },
-  enabled: {
-    backgroundColor: Colors.primary,
-  },
-  disabled: {
-    backgroundColor: Colors.primaryMuted,
-  },
-});
+
 export default Page;
+
+const styles = StyleSheet.create({
+	inputContainer: {
+		marginTop: 20,
+		marginBottom: 10,
+		gap: 10,
+	},
+	input: {
+		backgroundColor: Colors.lightGray,
+		paddingHorizontal: 20,
+		paddingVertical: 20,
+		width: "100%",
+		// height: 60,
+		fontSize: 18,
+		borderRadius: 16,
+	},
+	label: {
+		fontWeight: "600",
+		fontSize: 18,
+		color: Colors.gray,
+	},
+});

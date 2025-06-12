@@ -1,61 +1,53 @@
-import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { Currency } from '@/interfaces/crypto';
-import { Link } from 'expo-router';
-import { useHeaderHeight } from '@react-navigation/elements';
-import Colors from '@/constants/Colors';
-import { defaultStyles } from '@/constants/Styles';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect } from "react";
+import { allCoins } from "@/data/coinlistdata";
+import { defaultStyles } from "@/constants/Styles";
+import { useHeaderHeight } from "@react-navigation/elements";
+import CryptoCard from "@/components/CryptoCard";
+import { Link } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 const Page = () => {
-  const headerHeight = useHeaderHeight();
+	const screenHeight = useHeaderHeight();
 
-  const currencies = useQuery({
-    queryKey: ['listings'],
-    queryFn: () => fetch('/api/listings').then((res) => res.json()),
-  });
+	return (
+		<ScrollView
+			style={[defaultStyles.container, { flex: 1 }]}
+			showsVerticalScrollIndicator={false}
+			contentContainerStyle={{
+				paddingTop: screenHeight - 80,
+				paddingBottom: 100,
+			}}
+		>
+			<StatusBar style="dark" />
+			<Text style={styles.pageHeader}>Latest crypto</Text>
 
-  const ids = currencies.data?.map((currency: Currency) => currency.id).join(',');
-
-  const { data } = useQuery({
-    queryKey: ['info', ids],
-    queryFn: () => fetch(`/api/info?ids=${ids}`).then((res) => res.json()),
-    enabled: !!ids,
-  });
-
-  return (
-    <ScrollView
-      style={{ backgroundColor: Colors.background }}
-      contentContainerStyle={{ paddingTop: headerHeight }}>
-      <Text style={defaultStyles.sectionHeader}>Latest Crypot</Text>
-      <View style={defaultStyles.block}>
-        {currencies.data?.map((currency: Currency) => (
-          <Link href={`/crypto/${currency.id}`} key={currency.id} asChild>
-            <TouchableOpacity style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-              <Image source={{ uri: data?.[currency.id].logo }} style={{ width: 40, height: 40 }} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Text style={{ fontWeight: '600', color: Colors.dark }}>{currency.name}</Text>
-                <Text style={{ color: Colors.gray }}>{currency.symbol}</Text>
-              </View>
-              <View style={{ gap: 6, alignItems: 'flex-end' }}>
-                <Text>{currency.quote.EUR.price.toFixed(2)} €</Text>
-                <View style={{ flexDirection: 'row', gap: 4 }}>
-                  <Ionicons
-                    name={currency.quote.EUR.percent_change_1h > 0 ? 'caret-up' : 'caret-down'}
-                    size={16}
-                    color={currency.quote.EUR.percent_change_1h > 0 ? 'green' : 'red'}
-                  />
-                  <Text
-                    style={{ color: currency.quote.EUR.percent_change_1h > 0 ? 'green' : 'red' }}>
-                    {currency.quote.EUR.percent_change_1h.toFixed(2)} %
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </Link>
-        ))}
-      </View>
-    </ScrollView>
-  );
+			<View style={styles.cryptoContainer}>
+				{allCoins.map((coin) => (
+					<Link
+						key={coin.uuid}
+						href={`/(authenticated)/crypto/${coin?.uuid}`}
+					>
+						<CryptoCard coin={coin} />
+					</Link>
+				))}
+			</View>
+		</ScrollView>
+	);
 };
+
 export default Page;
+
+const styles = StyleSheet.create({
+	pageHeader: {
+		fontSize: 24,
+		fontWeight: "700",
+	},
+	cryptoContainer: {
+		marginTop: 30,
+		backgroundColor: "#fff",
+		borderRadius: 20,
+		padding: 20,
+		gap: 20,
+	},
+});
