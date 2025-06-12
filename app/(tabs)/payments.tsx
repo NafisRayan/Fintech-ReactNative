@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { 
@@ -11,8 +11,19 @@ import {
   Apple,
   CreditCard,
   Search,
-  History
+  History,
+  Plus,
+  DollarSign,
+  Zap,
+  Calculator,
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { spacing, fontSize, iconSize } from '@/utils/responsive';
+
+const { width } = Dimensions.get('window');
 
 export default function PaymentsScreen() {
   const { colors } = useTheme();

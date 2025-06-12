@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,20 +14,48 @@ import {
   CreditCard,
   TrendingUp,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  QrCode,
+  Receipt,
+  DollarSign,
+  BarChart3,
+  Zap
 } from 'lucide-react-native';
-import { useState } from 'react';
+import SendMoneyModal from '@/components/modals/SendMoneyModal';
+import * as Haptics from 'expo-haptics';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [sendMoneyModalVisible, setSendMoneyModalVisible] = useState(false);
+
+  const handleQuickAction = (action: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    switch (action) {
+      case 'Send':
+        setSendMoneyModalVisible(true);
+        break;
+      case 'Request':
+        Alert.alert('Request Money', 'Request money feature coming soon!');
+        break;
+      case 'Pay':
+        Alert.alert('QR Pay', 'QR payment feature coming soon!');
+        break;
+      case 'Cards':
+        Alert.alert('Cards', 'Navigate to cards section');
+        break;
+    }
+  };
 
   const quickActions = [
-    { icon: Send, label: 'Send', color: colors.primary },
-    { icon: Plus, label: 'Request', color: colors.secondary },
-    { icon: Smartphone, label: 'Pay', color: colors.accent },
-    { icon: CreditCard, label: 'Cards', color: colors.primary },
+    { icon: Send, label: 'Send', color: colors.primary, action: 'Send' },
+    { icon: Plus, label: 'Request', color: colors.secondary, action: 'Request' },
+    { icon: QrCode, label: 'QR Pay', color: colors.accent, action: 'Pay' },
+    { icon: CreditCard, label: 'Cards', color: colors.primary, action: 'Cards' },
   ];
 
   const recentTransactions = [
@@ -122,7 +150,11 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.quickActions}>
             {quickActions.map((action, index) => (
-              <TouchableOpacity key={index} style={styles.quickAction}>
+              <TouchableOpacity 
+                key={index} 
+                style={styles.quickAction}
+                onPress={() => handleQuickAction(action.action)}
+              >
                 <View style={[styles.quickActionIcon, { backgroundColor: `${action.color}10` }]}>
                   <action.icon size={24} color={action.color} />
                 </View>
@@ -182,6 +214,12 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+      
+      {/* Send Money Modal */}
+      <SendMoneyModal
+        visible={sendMoneyModalVisible}
+        onClose={() => setSendMoneyModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

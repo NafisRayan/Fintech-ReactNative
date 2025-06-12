@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Eye, EyeOff, Lock, Clock as Unlock, Settings, Wifi, MoveHorizontal as MoreHorizontal } from 'lucide-react-native';
+import { Plus, Eye, EyeOff, Lock, Settings, Wifi, MoreHorizontal, Pause, Play, Copy, Share, CreditCard as CardIcon } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 48;
@@ -48,6 +49,28 @@ export default function CardsScreen() {
       isLocked: true,
     },
   ];
+
+  const handleCardAction = (action: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    switch (action) {
+      case 'lock':
+        Alert.alert('Lock Card', 'Are you sure you want to lock this card?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Lock', style: 'destructive', onPress: () => Alert.alert('Success', 'Card has been locked') }
+        ]);
+        break;
+      case 'settings':
+        Alert.alert('Card Settings', 'Card settings functionality coming soon!');
+        break;
+      case 'add':
+        Alert.alert('Add Money', 'Add money to card functionality coming soon!');
+        break;
+      case 'more':
+        Alert.alert('More Options', 'Additional card options coming soon!');
+        break;
+    }
+  };
 
   const cardActions = [
     { icon: Lock, label: 'Lock Card', action: 'lock' },
@@ -173,6 +196,7 @@ export default function CardsScreen() {
               <TouchableOpacity
                 key={index}
                 style={[styles.actionItem, { backgroundColor: colors.surface }]}
+                onPress={() => handleCardAction(action.action)}
               >
                 <View style={[styles.actionIcon, { backgroundColor: `${colors.primary}10` }]}>
                   <action.icon size={20} color={colors.primary} />
