@@ -2,6 +2,13 @@
 
 This is a starter template for a Fintech application built with Expo and React Native. It provides a solid foundation for building a mobile banking or finance-related app, complete with authentication, navigation, and a variety of pre-built UI components.
 
+## Preview
+
+<img src="./assets/images/Fintech Mobile App.png" alt="Fintech Mobile App Preview" width="600" />
+
+This is a preview of the Fintech application interface, showcasing key screens such as the dashboard, transaction view, and authentication flow.
+
+
 ## Features
 
 * **Authentication Flow:** Includes screens for registration, login, and biometric authentication.
