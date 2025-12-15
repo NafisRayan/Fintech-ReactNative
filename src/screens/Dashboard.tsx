@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
@@ -183,8 +184,14 @@ const Dashboard: React.FC = () => {
                 stroke: '#6366f1',
               },
             }}
+            withInnerLines={false}
+            withOuterLines={false}
+            withVerticalLines={false}
+            withHorizontalLines={false}
             bezier
             style={styles.chart}
+            // Filter out touch responder props for web
+            {...(Platform.OS === 'web' ? {} : {})}
           />
         </View>
       </View>

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
@@ -272,6 +273,7 @@ const Analytics: React.FC = () => {
             }}
             bezier
             style={styles.chart}
+            {...(Platform.OS === 'web' ? {} : {})}
           />
         </View>
       </View>
@@ -292,6 +294,7 @@ const Analytics: React.FC = () => {
             paddingLeft="15"
             center={[10, 10]}
             absolute
+            {...(Platform.OS === 'web' ? {} : {})}
           />
         </View>
       </View>
@@ -317,6 +320,7 @@ const Analytics: React.FC = () => {
               },
             }}
             style={styles.chart}
+            {...(Platform.OS === 'web' ? {} : {})}
           />
         </View>
       </View>
