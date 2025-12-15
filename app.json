@@ -1,24 +1,30 @@
 {
   "expo": {
-    "name": "expo-nativewind",
-    "slug": "expo-nativewind",
+    "name": "finance-management-app",
+    "slug": "finance-management-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111827"
+    },
     "ios": {
       "supportsTablet": true
     },
-    "web": {
-      "bundler": "metro",
-      "output": "single",
-      "favicon": "./assets/images/favicon.png"
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#111827"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
     },
-    "plugins": ["expo-router", "expo-font", "expo-web-browser"],
-    "experiments": {
-      "typedRoutes": true
+    "web": {
+      "favicon": "./assets/favicon.png"
     }
   }
 }
